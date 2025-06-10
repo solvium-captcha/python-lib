@@ -129,15 +129,33 @@ class Solvium:
         )
 
     async def _create_recaptcha_v3_task(
-        self, sitekey: str, pageurl: str, action: str, proxy: Optional[str] = None
+        self, sitekey: str, pageurl: str, action: str, enterprise: bool, proxy: Optional[str]
     ):
         """Create a reCAPTCHA v3 solving task."""
         params = {"url": pageurl, "sitekey": sitekey, "action": action}
         if proxy is not None:
             params["proxy"] = proxy
+        if enterprise:
+            params["enterprise"] = "true"
         return await self._new_task_wrapper(
             self.session.get(
                 "/task/recaptcha-v3",
+                params=params,
+            )
+        )
+        
+    async def _create_recaptcha_v2_task(
+        self, sitekey: str, pageurl: str, action: str, enterprise: bool, proxy: Optional[str]
+    ):
+        """Create a reCAPTCHA v2 solving task."""
+        params = {"url": pageurl, "sitekey": sitekey, "action": action}
+        if proxy is not None:
+            params["proxy"] = proxy
+        if enterprise:
+            params["enterprise"] = "true"
+        return await self._new_task_wrapper(
+            self.session.get(
+                "/task/recaptcha-v2",
                 params=params,
             )
         )
@@ -279,7 +297,7 @@ class Solvium:
         Args:
             pageurl (str): The URL of the page with the challenge.
             body_b64 (str): Base64 encoded body content.
-            proxy (str): Proxy to use for the request.
+            proxy (str): Proxy to use for the request (fmt. http://login:password@address:port).
 
         Returns:
             Optional[str]: The clearance solution if successful, None otherwise.
@@ -300,7 +318,7 @@ class Solvium:
         Args:
             pageurl (str): The URL of the page with the challenge.
             body_b64 (str): Base64 encoded body content.
-            proxy (str): Proxy to use for the request.
+            proxy (str): Proxy to use for the request (fmt. http://login:password@address:port).
 
         Returns:
             Optional[str]: The clearance solution if successful, None otherwise.
@@ -339,7 +357,7 @@ class Solvium:
         return asyncio.run(self.vercel(challenge_token=challenge_token))
 
     async def recaptcha_v3(
-        self, sitekey: str, pageurl: str, action: str
+        self, sitekey: str, pageurl: str, action: str, enterprise: bool = False, proxy: Optional[str] = None
     ) -> Optional[str]:
         """
         Solve a reCAPTCHA v3 asynchronously.
@@ -348,11 +366,13 @@ class Solvium:
             sitekey (str): The site key for the reCAPTCHA.
             pageurl (str): The URL where the reCAPTCHA is present.
             action (str): The action parameter for reCAPTCHA v3.
+            enterprise (bool): An enterprise verison of reCAPTCHA v3.
+            proxy (str): Proxy to use for the request (fmt. http://login:password@address:port).
 
         Returns:
             Optional[str]: The reCAPTCHA solution token if successful, None otherwise.
         """
-        task_id = await self._create_recaptcha_v3_task(sitekey, pageurl, action)
+        task_id = await self._create_recaptcha_v3_task(sitekey, pageurl, action, enterprise, proxy)
         if not task_id:
             return None
         return await asyncio.wait_for(
@@ -360,7 +380,7 @@ class Solvium:
         )
 
     def recaptcha_v3_sync(
-        self, sitekey: str, pageurl: str, action: str
+        self, sitekey: str, pageurl: str, action: str, enterprise: bool = False, proxy: Optional[str] = None
     ) -> Optional[str]:
         """
         Solve a reCAPTCHA v3 synchronously.
@@ -369,10 +389,55 @@ class Solvium:
             sitekey (str): The site key for the reCAPTCHA.
             pageurl (str): The URL where the reCAPTCHA is present.
             action (str): The action parameter for reCAPTCHA v3.
+            enterprise (bool): An enterprise verison of reCAPTCHA v3.
+            proxy (str): Proxy to use for the request (fmt. http://login:password@address:port).
 
         Returns:
             Optional[str]: The reCAPTCHA solution token if successful, None otherwise.
         """
         return asyncio.run(
-            self.recaptcha_v3(sitekey=sitekey, pageurl=pageurl, action=action)
+            self.recaptcha_v3(sitekey=sitekey, pageurl=pageurl, action=action, enterprise=enterprise, proxy=proxy)
+        )
+        
+    async def recaptcha_v2(
+        self, sitekey: str, pageurl: str, action: str, enterprise: bool = False, proxy: Optional[str] = None
+    ) -> Optional[str]:
+        """
+        Solve a reCAPTCHA v2 asynchronously.
+
+        Args:
+            sitekey (str): The site key for the reCAPTCHA.
+            pageurl (str): The URL where the reCAPTCHA is present.
+            action (str): The action parameter for reCAPTCHA v2.
+            enterprise (bool): An enterprise verison of reCAPTCHA v2.
+            proxy (str): Proxy to use for the request (fmt. http://login:password@address:port).
+
+        Returns:
+            Optional[str]: The reCAPTCHA solution token if successful, None otherwise.
+        """
+        task_id = await self._create_recaptcha_v2_task(sitekey, pageurl, action, enterprise, proxy)
+        if not task_id:
+            return None
+        return await asyncio.wait_for(
+            self._wait_for_task_completion(task_id), timeout=self.timeout
+        )
+
+    def recaptcha_v2_sync(
+        self, sitekey: str, pageurl: str, action: str, enterprise: bool = False, proxy: Optional[str] = None
+    ) -> Optional[str]:
+        """
+        Solve a reCAPTCHA v2 synchronously.
+
+        Args:
+            sitekey (str): The site key for the reCAPTCHA.
+            pageurl (str): The URL where the reCAPTCHA is present.
+            action (str): The action parameter for reCAPTCHA v2.
+            enterprise (bool): An enterprise verison of reCAPTCHA v2.
+            proxy (str): Proxy to use for the request (fmt. http://login:password@address:port).
+
+        Returns:
+            Optional[str]: The reCAPTCHA solution token if successful, None otherwise.
+        """
+        return asyncio.run(
+            self.recaptcha_v2(sitekey=sitekey, pageurl=pageurl, action=action, enterprise=enterprise, proxy=proxy)
         )

@@ -8,7 +8,7 @@ USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTM
 PROXY = os.environ.get("PROXY")
 assert PROXY is not None, "Please set the PROXY environment variable."
 WEBSITE_WITH_CLOUDFLARE_WALL = "https://loyalty.campnetwork.xyz/loyalty"
-API_KEY = os.environ.get("API_KEY")
+API_KEY = os.environ.get("API_KEY")  # Can be found at https://t.me/solvium_crypto_bot
 assert API_KEY is not None, "Please set the API_KEY environment variable."
 
 solvium = Solvium(API_KEY, verbose=True)
